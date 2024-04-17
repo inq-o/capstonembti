@@ -1,7 +1,7 @@
 USE capston;
 #회원 테이블 생성
 CREATE TABLE MemberInfo (
-    MemberID INT AUTO_INCREMENT PRIMARY KEY,
+    MemberID INT AUTO_INCREMENT PRIMARY KEY,  -- 기본키
     ID VARCHAR(15) UNIQUE NOT NULL,
     Password VARCHAR(50) NOT NULL,
     Phone VARCHAR(15) NOT NULL,
@@ -27,21 +27,31 @@ DELIMITER ;
 
 #회원의 운동 목적, 수준, 부위 및 MBTI 저장 테이블 생성
 CREATE TABLE Members (
-    MemberID INT NOT NULL,
+    MemberID INT PRIMARY KEY,
     ExercisePurpose ENUM('다이어트', '체력 증진', '근력 운동') NOT NULL,
     ExerciseLevel ENUM('초급', '중급', '고급') NOT NULL,
-    ExerciseArea ENUM('상체', '하체', '유산소') NOT NULL,
+    ExerciseArea ENUM('상체', '하체', '유산소', '스트레칭') NOT NULL,
     MBTI_I_E ENUM('I', 'E'),
     MBTI_J_P ENUM('J', 'P'),
-    FOREIGN KEY (MemberID) REFERENCES MemberInfo(MemberID)
+    FOREIGN KEY (MemberID) REFERENCES MemberInfo(MemberID)  -- 외래키 : MemberInfo의 MemberID
+);
+
+#친구 추가 테이블 생성
+CREATE TABLE Friendship (
+    FriendshipID INT AUTO_INCREMENT PRIMARY KEY,
+    Member1ID INT NOT NULL,
+    Member2ID INT NOT NULL,
+    Status ENUM('Pending', 'Accepted', 'Rejected') NOT NULL, -- 친구 관계 상태(대기 중, 수락됨, 거부됨)
+    FOREIGN KEY (Member1ID) REFERENCES MemberInfo(MemberID),
+    FOREIGN KEY (Member2ID) REFERENCES MemberInfo(MemberID)
 );
 
 #홈트레이닝 영상 테이블 생성
 CREATE TABLE HomeTrainings (
-    VideoID INT PRIMARY KEY AUTO_INCREMENT,
+    VideoID INT AUTO_INCREMENT PRIMARY KEY,  -- 기본키
     ExercisePurpose ENUM('다이어트', '체력 증진', '근력 운동') NOT NULL,
     ExerciseLevel ENUM('초급', '중급', '고급') NOT NULL,
-    ExerciseArea ENUM('상체', '하체', '유산소') NOT NULL,
+    ExerciseArea ENUM('상체', '하체', '유산소', '스트레칭') NOT NULL,
     Title VARCHAR(100) NOT NULL,
     Description TEXT,
     URL VARCHAR(255) NOT NULL
@@ -49,7 +59,7 @@ CREATE TABLE HomeTrainings (
 
 #스포츠 정보 테이블 생성
 CREATE TABLE Sports (
-    SportID INT PRIMARY KEY AUTO_INCREMENT,
+    SportID INT AUTO_INCREMENT PRIMARY KEY,  -- 기본키
     SportName VARCHAR(50) NOT NULL,
     Description TEXT,
     SuitableFor ENUM('I', 'E') NOT NULL
@@ -57,18 +67,27 @@ CREATE TABLE Sports (
 
 #사용자 활동 로그 테이블 생성
 CREATE TABLE UserLogs (
-    LogID INT PRIMARY KEY AUTO_INCREMENT,
+    LogID INT AUTO_INCREMENT PRIMARY KEY,  -- 기본키
     MemberID INT NOT NULL,
     ActivityType ENUM('운동', '영상 시청', '사이트 이용'),
-    StartTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    StartTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
     EndTime TIMESTAMP,
     VideoID INT, -- 영상 시청 시 해당 영상의 ID
     DurationSeconds INT, -- 운동 또는 영상 시청 시간(초 단위)
-    FOREIGN KEY (MemberID) REFERENCES Members(MemberID),
-    FOREIGN KEY (VideoID) REFERENCES HomeTrainings(VideoID)
+    FOREIGN KEY (MemberID) REFERENCES Members(MemberID),  -- 외래키 : Members의 MemberID
+    FOREIGN KEY (VideoID) REFERENCES HomeTrainings(VideoID)  -- 외래키 : HomeTrainings의 VideoID
 );
 
-# DurationSeconds 자동 계산 TRIGGER 생성
+#사용자 리뷰 테이블
+CREATE TABLE Review (
+	MemberID INT PRIMARY KEY,
+    Score INT NOT NULL,
+    CONSTRAINT chk_Score CHECK (Score BETWEEN 1 AND 5),
+    reveiw VARCHAR(250),
+    FOREIGN KEY (MemberID) REFERENCES Members(MemberID)
+);
+
+# DurationSeconds 자동 계산(EndTime - StartTime 초) 트리거
 DELIMITER $$
 CREATE TRIGGER calculate_duration
 BEFORE INSERT ON UserLogs
@@ -77,9 +96,6 @@ BEGIN
     SET NEW.DurationSeconds = TIMESTAMPDIFF(SECOND, NEW.StartTime, NEW.EndTime);
 END$$
 DELIMITER ;
-
--- 트리거를 트리거 생성 후 설정으로 변경
-
 
 #본인의 MBTI를 모를 경우 질문을 통해 할당
 -- MBTI 질문 답변 테이블
@@ -90,18 +106,18 @@ CREATE TABLE MBTIQuestion (
     selectTwo VARCHAR(100) NOT NULL
 );
 
-INSERT INTO MBTIQuestion (question, selectOne, selectTwo)
+INSERT INTO MBTIQuestion (question, selectOne, selectTwo)  -- selectOne : I / J, selectTwo : E / P
 VALUES
-('질문 1', '답변 A', '답변 B'), -- answerOne에 관한 답변들
-('질문 2', '답변 C', '답변 D'), -- answerTwo에 관한 답변들
-('질문 3', '답변 E', '답변 F'), -- answerThree에 관한 답변들
-('질문 4', '답변 G', '답변 H'), -- answerFour에 관한 답변들
-('질문 5', '답변 I', '답변 J'), -- answerFive에 관한 답변들 
-('질문 6', '답변 K', '답변 L'), -- answerSix에 관한 답변들
-('질문 7', '답변 M', '답변 N'), -- answerSeven에 관한 답변들
-('질문 8', '답변 O', '답변 P'), -- answerEight에 관한 답변들
-('질문 9', '답변 Q', '답변 R'), -- answerNine에 관한 답변들
-('질문 10', '답변 S', '답변 T'); -- answerTen에 관한 답변들
+('휴식을 취할 때 다른 사람과 시간을 보내기보다는 혼자 있는 것을 선호한다.', 'Yes', 'No'), -- answerOne에 관한 답변들
+('새로운 환경에서 사람들과 대화하기 전에 관찰하는 것을 선호한다.', 'Yes', 'No'), -- answerTwo에 관한 답변들
+('집중이 필요할 떄 혼자 있는 것이 더 효과적이라고 생각한다.', 'Yes', 'No'), -- answerThree에 관한 답변들
+('새로운 사람들과 친해지는 것보다 익숙한 사람들과 시간을 보내는 편이다.', 'Yes', 'No'), -- answerFour에 관한 답변들
+('자신의 생각이나 감정을 표현하기 전에 깊게 생각하는 편이다.', 'Yes', 'No'), -- answerFive에 관한 답변들 
+('일정한 규칙과 체계를 선호한다.', 'Yes', 'No'), -- answerSix에 관한 답변들
+('목표나 일정에 따라 체계적인 계획을 세우고, 이는 반드시 지켜져야 한다.', 'Yes', 'No'), -- answerSeven에 관한 답변들
+('새로운 것들 보다는 익숙한 것이 더 좋다.', 'Yes', 'No'), -- answerEight에 관한 답변들
+('무언가를 결정할 때 가능한 빠르게 결정하는 편이다.', 'Yes', 'No'), -- answerNine에 관한 답변들
+('무언가를 시작하면 한 가지 일에 몰두하는 편이다.', 'Yes', 'No'); -- answerTen에 관한 답변들
 
 -- MemberQA 테이블 생성
 CREATE TABLE MemberQA (
@@ -171,14 +187,14 @@ DELIMITER ;
 
 SET GLOBAL log_bin_trust_function_creators = 1;
 
-# 예시 데이터
+# 예시 데이터 -- 추후 홈트 영상 및 스포츠 테이블 데이터 INSERT 할 예정
 INSERT INTO MemberInfo (ID, Password, Phone, MemberName, Birthdate, Age, Gender, Nickname)
 VALUES 
-('user1', 'password1', '123456789', 'John Doe', '1990-01-01', 31, '남성', 'johndoe'),
-('user2', 'password2', '987654321', 'Jane Smith', '1995-05-15', 26, '여성', 'janesmith'),
-('user3', 'password3', '111222333', 'Mike Johnson', '1985-09-20', 36, '남성', 'mikej'),
-('user4', 'password4', '444555666', 'Emily Brown', '2000-03-10', 24, '여성', NULL),
-('user5', 'password5', '777888999', 'Chris Lee', '1988-07-08', 33, '남성', 'chrislee');
+('userIdCHeck', 'cHeckPW', '01012341233', '홍길동', '1990-01-01', 31, '남성', 'roadDong'),
+('sn2kw123', 'kqln!32s', '01099991234', '김철수', '1995-05-15', 26, '남성', 'IronWater'),
+('31nkal', 'password@', '01026738923', '유저이름', '1985-09-20', 36, '여성', NULL),
+('user4', 'Password4', '01032352123', '닉네임확인', '2000-03-10', 24, '남성', NULL),
+('IDyoung', 'youngPW', '01089273182', '이영희', '1988-07-08', 33, '여성', 'zeroHee');
 
 INSERT INTO Members (MemberID, ExercisePurpose, ExerciseLevel, ExerciseArea, MBTI_I_E, MBTI_J_P)
 VALUES
@@ -188,25 +204,34 @@ VALUES
 (4, '다이어트', '초급', '상체', 'E', 'P'),
 (5, '체력 증진', '중급', '하체', 'I', 'J');
 
+INSERT INTO Friendship (Member1ID, Member2ID,status)
+VALUES
+(1, 2, 'Pending'),
+(2, 5, 'Accepted'),
+(4, 1, 'Rejected'),
+(3, 2, 'Rejected');
+
 INSERT INTO MemberQA (MemberID, answerOne, answerTwo, answerThree, answerFour, answerFive, answerSix, answerSeven, answerEight, answerNine, answerTen)
 VALUES
-(1, '답변 A', '답변 C', '답변 E', '답변 H', '답변 I', '답변 K', '답변 M', '답변 O', '답변 R', '답변 T'),  -- I/J
-(2, '답변 B', '답변 C', '답변 E', '답변 H', '답변 J', '답변 K', '답변 M', '답변 P', '답변 Q', '답변 T'),  -- E/J
-(3, '답변 B', '답변 C', '답변 E', '답변 H', '답변 J', '답변 L', '답변 M', '답변 O', '답변 R', '답변 T');  -- E/P
+(1, 'Yes', 'Yes', 'Yes', 'No', 'No', 'Yes', 'Yes', 'Yes', 'Yes', 'No'),  -- I/J
+(2, 'No', 'Yes', 'No', 'Yes', 'No', 'No', 'Yes', 'Yes', 'No', 'Yes'),  -- E/J
+(3, 'Yes', 'No', 'Yes', 'No', 'No', 'No', 'No', 'No', 'No', 'No');  -- E/P
 
 INSERT INTO HomeTrainings (ExercisePurpose, ExerciseLevel, ExerciseArea, Title, Description, URL)
 VALUES
-('다이어트', '초급', '상체', '상체 다이어트 운동', '상체 다이어트를 위한 운동 영상입니다.', 'https://www.example.com/video1'),
-('체력 증진', '중급', '하체', '하체 강화 운동', '하체 근력을 키우기 위한 운동 영상입니다.', 'https://www.example.com/video2'),
-('근력 운동', '고급', '유산소', '고급 유산소 운동', '고급 근력 운동을 위한 유산소 운동 영상입니다.', 'https://www.example.com/video3');
+('근력 운동', '초급', '하체', '[초급] 하체 근력 운동', '헬린이 추천! 하체 운동 입문', 'https://www.example.com/video1'),
+('다이어트', '중급', '상체', '[중급] 다이어트 너도 할 수 있어!', '오늘부터 뱃살과 이별하기로 했습니다.', 'https://www.example.com/video2'),
+('체력 증진', '초급', '유산소', '유산소 체력 증진', '하루 1시간 가볍게 유산소 운동', 'https://www.example.com/video3'),
+('체력 증진', '초급', '스트레칭', '거북목 이제 그만!', '이 영상이 뜬 당신, 스트레칭 시~작!', 'https://www.example.com/video4'),
+('근력 운동', '고급', '스트레칭', '[고급] 상체 운동 전 스트레칭', '근력 운동 전에 스트레칭은 필수', 'http://www.example.com/video5');
 
 INSERT INTO Sports (SportName, Description, SuitableFor)
 VALUES
-('축구', '축구에 대한 설명입니다.', 'E'),
-('수영', '수영에 대한 설명입니다.', 'I'),
-('농구', '농구에 대한 설명입니다.', 'E'),
-('테니스', '테니스에 대한 설명입니다.', 'I'),
-('야구', '야구에 대한 설명입니다.', 'E');
+('축구', '친구와 함께 해요 :)', 'E'),
+('수영', '혼자 할 수 있어요!', 'I'),
+('농구', '친구와 함께 해요 :)', 'E'),
+('자전거', '혼자 할 수 있어요!', 'I'),
+('야구', '친구와 함께 해요 :)', 'E');
 
 INSERT INTO UserLogs (MemberID, ActivityType, StartTime, EndTime, VideoID, DurationSeconds)
 VALUES
@@ -216,11 +241,18 @@ VALUES
 (4, '사이트 이용', '2024-04-12 16:00:00', '2024-04-12 17:00:00', NULL, NULL),
 (5, '운동', '2024-04-12 18:00:00', '2024-04-12 19:00:00', 3, NULL);
 
+INSERT INTO Review (MemberID, Score, reveiw)
+VALUES
+(1, 3, '더 다양한 홈트레이닝 영상이 있으면 좋겠어요.'),
+(2, 5, NULL),
+(4, 4, '친구랑 같이 사용할 수 있어서 좋아요');
+
 SELECT * FROM MemberInfo;
-SELECT * FROM Members;  -- MemberID : 3인 경우 보면, 사용자는 J라고 입력했는데 응답 결과 P라고 나옴 => 응답 결과에 맞춰서 저장하는 걸로 결정 : 팀 회의 때 말해주기
+SELECT * FROM Members;  -- MemberID : 3인 경우 보면, 사용자는 J라고 입력했는데 응답 결과 P라고 나옴 => 응답 결과에 맞춰서 저장
+SELECT * FROM Friendship;
 SELECT * FROM MBTIQuestion;
 SELECT * FROM memberQA;
 SELECT * FROM HomeTrainings;
 SELECT * FROM Sports;
 SELECT * FROM UserLogs;
-
+SELECT * FROM Review;
