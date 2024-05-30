@@ -17,7 +17,7 @@ CREATE TABLE User (
 CREATE TABLE Video (
 	VideoID INT AUTO_INCREMENT PRIMARY KEY, -- 기본키 : 영상 추가될 때마다 자동 할당 됨
     Title VARCHAR(200) NOT NULL, 
-    Category ENUM('다이어트', '근력 운동', '스트레칭') NOT NULL,
+    Category ENUM('다이어트', '근력운동') NOT NULL,
     URL VARCHAR(300) NOT NULL, 
     Duration TIME NOT NULL -- 영상 길이(소요 시간)
 );
@@ -57,7 +57,7 @@ CREATE TABLE ViewScore (
 
 # ViewStatus 테이블 : MBTI, 영상 고유 ID, 군집별 시청 점수
 CREATE INDEX idx_UserMBTI ON User(UserMBTI);
-CREATE TABLE ViewStatus (
+CREATE TABLE ViewStats (
     ID INT AUTO_INCREMENT PRIMARY KEY,
     MBTI ENUM('ESFP', 'ESFJ', 'ESTP', 'ESTJ', 'ENFP', 'ENFJ', 'ENTP', 'ENTJ', 
         'ISFP', 'ISFJ', 'ISTP', 'ISTJ', 'INFP', 'INFJ', 'INTP', 'INTJ'),
@@ -86,7 +86,7 @@ DELIMITER $$
 CREATE PROCEDURE CalculateClusterWatchScore(IN newVideoID INT)
 BEGIN
     -- 해당 영상에 대한 MBTI별 시청 점수를 계산합니다.
-    INSERT INTO ViewStatus (MBTI, VideoID, ClusterWatchScore)
+    INSERT INTO ViewStats (MBTI, VideoID, ClusterWatchScore)
     SELECT U.UserMBTI, VH.VideoID,
         SUM(VS.WatchScore) AS ClusterWatchScore
     FROM User U
@@ -110,47 +110,64 @@ BEGIN
 END$$
 DELIMITER ;
 
+# 식단 테이블 : 식단 고유 ID, 음식 이름, 타입(
+CREATE TABLE Diet(
+    Diet_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(255) NOT NULL,
+    Diet_type ENUM('근력운동', '다이어트') NOT NULL
+);
 
-#테스트 데이터 >> 추후 삭제하고 실제 데이터 INSERT
--- 사용자(User) 테이블에 예시 데이터 삽입
-INSERT INTO User (UserMBTI, Name, BirthDate, Sex, PhoneNumber, Height, Weight) 
-VALUES 
-('ENFP', 'Alice', '1990-05-15', '여성', '010-1234-5678', 165, 55),
-('ISTJ', 'Bob', '1985-10-20', '남성', '010-9876-5432', 175, 70),
-('ENFP', 'Charlie', '1992-03-25', '남성', '010-1111-2222', 170, 60),
-('ISFP', 'ABC', '2001-03-05', '여성', '010-2222-1111', 159, 47),
-('ENTP', 'Joe', '2004-12-21', '남성', '010-9999-8888', 190, 90) ;
+-- 데이터 삽입
+INSERT INTO Video (Title, Category, URL, Duration) VALUES
+('딱 10분입니다 보세요! 당신의 어깨가 바뀝니다! [데스런조성준]', '근력운동', 'https://www.youtube.com/watch?v=RxoBiAvR214', '00:09:45'),
+('등근육 쫙쫙 갈라주는 등운동 방법 [데스런 조성준]', '근력운동', 'https://www.youtube.com/watch?v=Us-51fIYC2U', '00:07:36'),
+('가슴운동 가자! [데스런 조성준]', '근력운동', 'https://www.youtube.com/watch?v=xSe8EJIgsUM', '00:02:12'),
+('매일 해야하는 20분 기초 코어운동 - 속근육 강화, 균형감각 향상, 허리통증 완화 (Core workout)', '근력운동', 'https://www.youtube.com/watch?v=C7gPeAgeBAk', '00:22:50'),
+('등, 가슴, 팔, 어깨 탄탄하게 만들기 - 덤벨 상체 운동 홈트 루틴', '근력운동', 'https://www.youtube.com/watch?v=xoWKLNwNva0', '00:20:45'),
+('[ENG] (근육통주의!!!!) 🔥올인원🔥 전신 근력운동 50분 홈트레이닝', '근력운동', 'https://www.youtube.com/watch?v=A5MzlPgNcJM', '00:50:25'),
+('하루 한 번! 꼭 해야하는 10분 기본 전신근력 운동 홈트 (층간소음🙅🏻‍♀️)', '근력운동', 'https://www.youtube.com/watch?v=aKzE3NNFEi4', '00:13:35'),
+('[200만뷰] 허리근육을 튼튼하게 만들고 싶다면? /우리들병원TV', '근력운동', 'https://www.youtube.com/watch?v=FJ2DWFN5IsA', '00:15:02'),
+('맨몸 전신운동 홈트레이닝 7가지! 초보자분들, 딱 4주만 따라해보세요! (설명+따라하기 영상)', '근력운동', 'https://www.youtube.com/watch?v=zSJYAyoojdw', '00:15:54'),
+('[ENG] (층간소음X, 설명O) 복근운동과 유산소를 한번에❗️서서하는 복근운동 1탄🔥', '근력운동', 'https://www.youtube.com/watch?v=kETh8T3it4k', '00:18:37'),
+('하체 날, 딱 10분 밖에 없다면 - 스쿼트 10가지 동작 - 하체운동 홈트 루틴', '근력운동', 'https://www.youtube.com/watch?v=DWYDL-WxF1U', '00:11:13'),
+('아랫배, 옆구리, 허리라인을 매끈하고 탄탄하게 - 코어 힘도 길러주는 복근운동 10분 홈트 루틴', '근력운동', 'https://www.youtube.com/watch?v=vckr1GJ0JMs', '00:11:15'),
+('기초체력 기르는 20분 전신 유산소 운동 (No 런지, No 스쿼트)', '다이어트', 'https://www.youtube.com/watch?v=OoytN1a8Klc', '00:20:42'),
+('역대급 땀폭발 HIIT - 고강도 인터벌 트레이닝 35분 전신 올인원', '다이어트', 'https://www.youtube.com/watch?v=LG6CNzlj_6o', '00:35:37'),
+('집에서 칼로리 불태우는 최고의 유산소운동 [칼소폭 매운맛]', '다이어트', 'https://www.youtube.com/watch?v=lKwZ2DU4P-A', '00:29:12'),
+('스트레스 해소 운동 🥊 유산소운동 - 킥복싱 스타일 홈트', '다이어트', 'https://www.youtube.com/watch?v=BYDcbiHwlXU', '00:18:53'),
+('홈트 처음할 때 이것부터하세요! 하루 15분 근력 유산소 전신운동 체지방 박살💣 층간소음NO 기구NO 식단&일지YES', '다이어트', 'https://www.youtube.com/watch?v=VbTlIVn8BX8', '00:18:40'),
+('탄력있게 살빼기 30분 - 덤벨 전신 유산소 홈트', '다이어트', 'https://www.youtube.com/watch?v=vMiNEdUPvak', '00:30:38'),
+('서서하는 초보 홈트 - 손목 무릎 부담없는 운동 - 유산소운동 홈트 - No 층간소음', '다이어트', 'https://www.youtube.com/watch?v=IXhppj6pwu4', '00:13:15'),
+('※30분 걷기운동※ 집에서 3km 걸으면서 전신칼로리 불태우기!! (Walking workout)', '다이어트', 'https://www.youtube.com/watch?v=aGOvDH3UY2A', '00:30:49'),
+('🔥 일주일에 -3kg가 그냥 빠지는🥵💦전신유산소의 시조새 줄넘기 운동을 이렇게 신나게 집에서 할 수 있다니!!!', '다이어트', 'https://www.youtube.com/watch?v=MUMRltg5n6Y', '00:16:35'),
+('🚨급찐늦빠🚨들을 위한 전신유산소 운동 | 쉬운 다이어트댄스를 찾는다면 바로 클릭! 👉', '다이어트', 'https://www.youtube.com/watch?v=75IWhFihA6c', '00:10:42');
 
--- 영상(Video) 테이블에 예시 데이터 삽입
-INSERT INTO Video (Title, Category, URL, Duration) 
-VALUES 
-('다이어트영상1', '다이어트', 'https://example.com/dietone', '01:30:00'),
-('근력 운동 영상 1', '근력 운동', 'https://example.com/strengthone', '00:45:00'),
-('스트레칭 영상 1', '스트레칭', 'https://example.com/stretchingone', '00:20:00'),
-('다이어트영상2', '다이어트', 'https://example.com/diettwo', '00:59:32'),
-('근력 운동 영상 2', '근력 운동', 'https://example.com/strengthtwo', '00:55:45'),
-('스트레칭 영상 2', '스트레칭', 'https://example.com/stretchingtwo', '02:01:09');
+INSERT INTO Diet (Name, Diet_type) VALUES
+('장어구이', '근력운동'),
+('장어덮밥','근력운동'),
+('닭가슴살 스테이크', '근력운동'),
+('소고기구이', '근력운동'),
+('브로콜리 참치 무침', '근력운동'),
+('연어 그라브락스','근력운동'),
+('연어 빠삐요뜨','근력운동'),
+('치미추리 스테이크','근력운동'),
+('닭가슴살 또띠아롤','근력운동'),
+('오리 스테이크','근력운동'),
+('사과샐러드', '다이어트'),
+('고구마 칩', '다이어트'),
+('고등어구이', '다이어트'),
+('그릭요거트', '다이어트'),
+('바나나 크림 수프','다이어트'),
+('슈퍼 곡물 스무디볼','다이어트'),
+('에그누들 볶음','다이어트'),
+('달걀 양배추 부침개','다이어트'),
+('단호박 달걀찜','다이어트'),
+('아보카도 쉬림프 라이스','다이어트');
 
--- 시청 기록(ViewHistory) 테이블에 예시 데이터 삽입
-INSERT INTO ViewHistory (UserID, VideoID, ViewDate, StartTime, EndTime) 
-VALUES 
-(1, 1, '2024-05-21', '2024-05-21 08:00:00', '2024-05-21 09:30:00'),
-(1, 2, '2024-05-21', '2024-05-21 09:45:00', '2024-05-21 10:30:00'),
-(1, 3, '2024-05-21', '2024-05-21 11:00:00', '2024-05-21 12:15:00'),
-(2, 2, '2024-05-21', '2024-05-21 10:00:00', '2024-05-21 10:45:00'),
-(2, 4, '2024-05-21', '2024-05-21 11:50:00', '2024-05-21 12:45:00'),
-(2, 6, '2024-05-21', '2024-05-21 13:00:00', '2024-05-21 14:30:00'),
-(3, 1, '2024-05-21', '2024-05-21 12:30:00', '2024-05-21 14:00:00'),
-(3, 3, '2024-05-21', '2024-05-21 14:30:00', '2024-05-21 15:20:00'),
-(4, 4, '2024-05-21', '2024-05-21 15:00:00', '2024-05-21 16:00:00'),
-(4, 5, '2024-05-21', '2024-05-21 16:30:00', '2024-05-21 17:45:00'),
-(5, 2, '2024-05-21', '2024-05-21 18:00:00', '2024-05-21 19:00:00'),
-(1, 6, '2024-05-21', '2024-05-21 19:30:00', '2024-05-21 20:15:00'),
-(5, 4, '2024-05-21', '2024-05-21 20:30:00', '2024-05-21 21:30:00'),
-(5, 5, '2024-05-21', '2024-05-21 22:00:00', '2024-05-21 23:15:00');
+SELECT * FROM Video;
+SELECT * FROM Diet;
 
 SELECT * FROM User;
-SELECT * FROM Video;
 SELECT * FROM ViewHistory;
 SELECT * FROM ViewScore;
-SELECT * FROM ViewStatus;
+SELECT * FROM ViewStats;
