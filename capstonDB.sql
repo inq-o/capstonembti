@@ -3,14 +3,16 @@ use capston;
 # User 테이블 : 사용자 고유 ID, MBTI, 이름, 생년월일, 성별, 전화번호, 키, 몸무게 -- 키 몸무게 NULL 허용함
 CREATE TABLE User ( 
 	UserID INT AUTO_INCREMENT PRIMARY KEY,  -- 기본키 : 회원 추가될 때마다 자동 할당 됨
+    ID VARCHAR(50) UNIQUE NOT NULL,
+    PW VARCHAR(6) NOT NULL CHECK (PW REGEXP '^[0-9]{6}$'),
     UserMBTI ENUM('ESFP', 'ESFJ', 'ESTP', 'ESTJ', 'ENFP', 'ENFJ', 'ENTP', 'ENTJ', 
 		'ISFP', 'ISFJ', 'ISTP', 'ISTJ', 'INFP', 'INFJ', 'INTP', 'INTJ'),  -- 16가지 중 하나
     Name VARCHAR(20) NOT NULL, 
     BirthDate DATE NOT NULL,
     Sex ENUM('남성', '여성') NOT NULL,
     PhoneNumber VARCHAR(20) NOT NULL,
-    Height FLOAT,
-    Weight FLOAT
+    Height FLOAT NOT NULL,
+    Weight FLOAT NOT NULL
 );
 
 # Video 테이블 : 영상 고유 ID, 영상 제목, 운동 카테고리, 영상 URL, 영상 길이
