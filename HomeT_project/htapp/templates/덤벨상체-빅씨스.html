@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Video</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- 비디오를 보여줄 영역 -->
+    <div id="player"></div>
+
+    <!-- YouTube 플레이어 API를 비동기로 로드 -->
+    <script async src="https://www.youtube.com/iframe_api"></script>
+
+    <script>
+        function sendWatchTime(currentTime) {
+            var data = {
+                user_id: 1,
+                watch_time_seconds: Math.floor(currentTime)
+            };
+
+            fetch('/show_video/xoWKLNwNva0/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => console.log('Watch time saved successfully:', data))
+            .catch(error => console.error('Error:', error));
+        }
+
+        // YouTube 플레이어 API 로드 후 실행될 콜백 함수
+        function onYouTubeIframeAPIReady() {
+            var player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: 'xoWKLNwNva0',
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+
+            var intervalId;
+
+            // 플레이어가 준비되었을 때 호출되는 함수
+            function onPlayerReady(event) {
+                event.target.playVideo(); // 자동 재생
+            }
+
+            // 플레이어 상태 변경 이벤트 핸들러
+            function onPlayerStateChange(event) {
+                if (event.data == YT.PlayerState.PLAYING) {
+                    startTracking();
+                } else {
+                    stopTracking();
+                }
+            }
+
+            // 재생 시간 추적 시작
+            function startTracking() {
+                intervalId = setInterval(function() {
+                    var currentTime = player.getCurrentTime();
+                    // 재생 시간을 서버로 전송
+                    sendWatchTime(currentTime);
+                }, 1000); // 1초마다 실행
+            }
+
+            // 재생 시간 추적 중지
+            function stopTracking() {
+                clearInterval(intervalId);
+                var currentTime = player.getCurrentTime();
+                sendWatchTime(currentTime); // 마지막 재생 시간 전송
+            }
+        }
+    </script>
+</body>
+</html>

@@ -44,4 +44,33 @@ def show_video(request, video_id):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
-    return render(request, 'htvideo.html')
+    if request.method == 'GET':
+        if video_id == 'Us-51fIYC2U':
+             template_name = '등-데스런.html'
+        elif video_id == 'RxoBiAvR214':
+            template_name = '어깨-데스런.html'
+        elif video_id == 'xSe8EJIgsUM':
+            template_name = '가슴-데스런.html'
+        elif video_id == 'C7gPeAgeBAk':
+            template_name = '복근-빵느.html'
+        elif video_id == 'xoWKLNwNva0':
+            template_name = '덤베상체-빅씨스.html'
+        elif video_id == 'OoytN1a8Klc':
+            template_name = '전신유산소-빵느.html'
+        elif video_id == 'LG6CNzlj_6o':
+            template_name = '인터벌-빅씨스.html'
+        elif video_id == 'A5MzlPgNcJM':
+            template_name = '전신-힙으뜸.html'
+        elif video_id == 'lKwZ2DU4P-A':
+            template_name = '전신-부부.html'
+        elif video_id == 'aKzE3NNFEi4':
+            template_name = '전신근력-빵느.html'
+        elif video_id == 'FJ2DWFN5IsA':
+            template_name = '허리-우리들병원.html'
+        elif video_id == 'BYDcbiHwlXU':
+            template_name = '유산소-빅씨스.html'
+        else:
+             return render(request, '404.html')
+    
+
+    return render(request, template_name)
